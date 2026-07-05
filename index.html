@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ZBS Template Preflight Validator</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Challenge 2 Prototype</p>
+          <h1>ZBS Template Preflight Validator</h1>
+          <p class="hero-copy">
+            Parse ZBS template JSON, detect likely moderation issues, explain
+            the risk, and suggest fixes before submission.
+          </p>
+        </div>
+      </header>
+
+      <nav class="app-nav" aria-label="Application pages">
+        <button class="nav-tab active" type="button" data-view="validator">Validator</button>
+        <button class="nav-tab" type="button" data-view="rules">ZBS Rule Map</button>
+        <button class="nav-tab" type="button" data-view="checks">Selected Checks</button>
+      </nav>
+
+      <section class="app-page active" id="validatorPage">
+        <section class="summary-grid" aria-label="Product value summary">
+          <article>
+            <span class="pill blue">Business</span>
+            <strong>Fewer rejections</strong>
+            <p>Clear fixes before waiting for moderation.</p>
+          </article>
+          <article>
+            <span class="pill green">Zalo</span>
+            <strong>Cleaner submissions</strong>
+            <p>Less repeated moderation workload.</p>
+          </article>
+          <article>
+            <span class="pill amber">User</span>
+            <strong>Safer notifications</strong>
+            <p>Clearer context, CTA, and sender intent.</p>
+          </article>
+        </section>
+
+        <section class="workspace">
+          <aside class="panel input-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Input</p>
+                <h2>Template registration content</h2>
+              </div>
+            </div>
+
+            <label class="field-label" for="sampleSelect">Sample template</label>
+            <select id="sampleSelect">
+              <option value="">Paste your own JSON / pseudo-JSON</option>
+            </select>
+
+            <div class="meta-grid">
+              <label>
+                Template ID
+                <input id="templateId" placeholder="589221" />
+              </label>
+              <label>
+                Type
+                <input id="templateType" placeholder="Tuy chinh / Payment / Voucher" />
+              </label>
+            </div>
+
+            <label class="field-label" for="jsonInput">JSON / pseudo-JSON</label>
+            <textarea id="jsonInput" spellcheck="false" placeholder="Paste template JSON here..."></textarea>
+          </aside>
+
+          <section class="panel preview-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Extracted preview</p>
+                <h2>User-visible content</h2>
+              </div>
+              <span class="chip" id="extractCount">0 fields</span>
+            </div>
+
+            <div class="phone-preview">
+              <div class="phone-top">
+                <span class="oa-dot"></span>
+                <div>
+                  <strong>ZBS Template Preview</strong>
+                  <small>Parsed from sections[]</small>
+                </div>
+              </div>
+              <div id="previewContent" class="message-stack">
+                <p class="empty-state">Select a sample or paste JSON to preview extracted content.</p>
+              </div>
+            </div>
+
+            <div class="extract-grid">
+              <div>
+                <span class="mini-label">Variables</span>
+                <p id="variablesList">--</p>
+              </div>
+              <div>
+                <span class="mini-label">Actions</span>
+                <p id="actionsList">--</p>
+              </div>
+              <div>
+                <span class="mini-label">Links / phones</span>
+                <p id="linksList">--</p>
+              </div>
+            </div>
+          </section>
+
+          <aside class="panel result-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Validation result</p>
+                <h2>Issues & suggested fixes</h2>
+              </div>
+              <span class="chip" id="issueCount">0 issues</span>
+            </div>
+
+            <div class="score-card" id="scoreCard">
+              <div>
+                <span id="scoreNumber">--</span>
+                <small>/100</small>
+              </div>
+              <p id="scoreText">Run validation to calculate readiness.</p>
+            </div>
+
+            <div id="issuesList" class="issues-list">
+              <p class="empty-state">Issues will appear here after validation.</p>
+            </div>
+          </aside>
+        </section>
+      </section>
+
+      <section class="app-page" id="rulesPage">
+        <section class="panel rule-map">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Rule engine</p>
+              <h2>ZBS moderation rule map</h2>
+            </div>
+            <a class="source-link" href="https://zalo.solutions/news/quy-dinh-chung-khi-kiem-duyet-mau-tin-nhan-zbs/xdygqtrjjm97k28rsh07wr72" target="_blank" rel="noreferrer">Official source</a>
+          </div>
+          <p class="rule-map-note">
+            Full rule categories are mapped from Zalo's public moderation rules.
+            The validator prioritizes rules that are high-impact and machine-checkable before submission.
+          </p>
+
+          <div class="rule-subnav" aria-label="Rule map sections">
+            <button class="rule-subtab active" type="button" data-rule-view="rules">All moderation rules</button>
+            <button class="rule-subtab" type="button" data-rule-view="prohibited">Tag 3 restricted categories</button>
+            <button class="rule-subtab" type="button" data-rule-view="holidays">Holiday/Tet occasions</button>
+          </div>
+
+          <div class="rule-toolbar">
+            <label>
+              Search
+              <input id="ruleSearch" placeholder="Search ID, category, description..." />
+            </label>
+            <label class="rule-filter-control">
+              Category
+              <select id="ruleCategoryFilter">
+                <option value="">All categories</option>
+              </select>
+            </label>
+            <label class="rule-filter-control">
+              Priority
+              <select id="rulePriorityFilter">
+                <option value="">All priorities</option>
+                <option value="P0">P0 - must check</option>
+                <option value="P1">P1 - important</option>
+                <option value="P2">P2 - special / manual</option>
+              </select>
+            </label>
+          </div>
+
+          <section class="rule-view active" id="allRulesView">
+            <div class="rule-summary" id="ruleSummary"></div>
+            <div class="rules-grid" id="rulesGrid"></div>
+          </section>
+
+          <section class="rule-view prohibited-section" id="prohibitedRulesView">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Tag 3 guardrail</p>
+                <h2>Prohibited / unsupported Promotion categories</h2>
+              </div>
+              <span class="chip">22 categories</span>
+            </div>
+            <p class="rule-map-note">
+              These categories are not supported, or are explicitly prohibited, for Tag 3 Promotion use cases.
+              The validator treats them as manual or keyword-based risk checks because industry classification usually needs business context.
+            </p>
+            <div class="prohibited-grid" id="prohibitedGrid"></div>
+          </section>
+
+          <section class="rule-view holiday-section" id="holidayRulesView">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Holiday/Tet guardrail</p>
+                <h2>Official occasions recognized for Holiday/Tet templates</h2>
+              </div>
+              <span class="chip">17 occasions</span>
+            </div>
+            <p class="rule-map-note">
+              For Holiday/Tet greeting or seasonal-promotion templates, ZBS does not support plain greetings only.
+              The template should include a valid image plus gift, voucher, promotion, or concrete benefit.
+              These are the official occasions listed in the moderation rules.
+            </p>
+            <div class="holiday-grid" id="holidayGrid"></div>
+          </section>
+        </section>
+      </section>
+
+      <section class="app-page" id="checksPage">
+        <section class="panel checks-page">
+          <div class="checks-intro">
+            <div>
+              <p class="eyebrow">Step 2 - Build the checks</p>
+              <h2>Which rules were automated, and why?</h2>
+              <p>
+                The prototype does not attempt to automate every moderation rule. It prioritizes checks that combine
+                high moderation impact, evidence in the provided samples, reliable detection from JSON, and an
+                actionable fix. Contextual or legal decisions remain human-reviewed.
+              </p>
+            </div>
+            <div class="selection-callout">
+              <strong>Selection principle</strong>
+              <p>Automate where confidence is high. Flag where context is missing. Never present a heuristic as an official approval decision.</p>
+            </div>
+          </div>
+
+          <section class="criteria-section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Prioritization framework</p>
+                <h2>Four criteria used for every rule</h2>
+              </div>
+            </div>
+            <div class="criteria-grid">
+              <article><span>01</span><strong>Moderation impact</strong><p>Would the violation block processing or create a meaningful rejection risk?</p></article>
+              <article><span>02</span><strong>Observed frequency</strong><p>Does the issue recur in the provided rejected samples or official guidance?</p></article>
+              <article><span>03</span><strong>Detection confidence</strong><p>Can the rule be evaluated consistently from JSON without guessing business context?</p></article>
+              <article><span>04</span><strong>Actionability</strong><p>Can the tool identify the affected field and recommend a concrete correction?</p></article>
+            </div>
+          </section>
+
+          <section class="selected-section">
+            <div class="section-heading split-heading">
+              <div>
+                <p class="eyebrow">Selected for automation</p>
+                <h2>Checks implemented in the validator</h2>
+              </div>
+              <div class="legend-row"><span class="check-mode deterministic">Deterministic</span><span class="check-mode hybrid">Hybrid</span></div>
+            </div>
+
+            <div class="selected-checks-grid">
+              <article class="selected-check">
+                <div class="check-top"><span class="priority-badge priority-p0">P0</span><span class="check-mode deterministic">Deterministic</span></div>
+                <h3>Valid JSON and core structure</h3>
+                <p class="check-rule">Parseable input with <code>root</code> and a non-empty <code>sections[]</code>.</p>
+                <dl><dt>Why selected</dt><dd>Nothing else can be validated or rendered when the payload is malformed. Detection is exact and the fix is immediate.</dd><dt>Validator output</dt><dd>Points to the structural failure and asks the business to restore the required root or sections array.</dd></dl>
+              </article>
+
+              <article class="selected-check">
+                <div class="check-top"><span class="priority-badge priority-p0">P0</span><span class="check-mode deterministic">Deterministic</span></div>
+                <h3>Parameter syntax and rendering</h3>
+                <p class="check-rule">Variables must use a complete <code>&lt;parameter_name&gt;</code> pattern and must not expose editor HTML.</p>
+                <dl><dt>Why selected</dt><dd>Parameter defects appear in rejected samples, are detectable directly from text fields, and can be fixed at the exact location.</dd><dt>Validator output</dt><dd>Reports malformed or exposed parameters and provides a corrected parameter example.</dd></dl>
+              </article>
+
+              <article class="selected-check">
+                <div class="check-top"><span class="priority-badge priority-p0">P0</span><span class="check-mode hybrid">Hybrid</span></div>
+                <h3>Customer identification</h3>
+                <p class="check-rule">Look for a clearly labelled customer name, customer code, phone suffix, or equivalent recipient identifier.</p>
+                <dl><dt>Why selected</dt><dd>Recipient context is central to a business notification and is a recurring reject reason in the sample set.</dd><dt>Detection limit</dt><dd>The tool can verify presence and labelling, but cannot prove that the runtime value belongs to the correct person.</dd></dl>
+              </article>
+
+              <article class="selected-check">
+                <div class="check-top"><span class="priority-badge priority-p0">P0</span><span class="check-mode hybrid">Hybrid</span></div>
+                <h3>Transaction or business-context identification</h3>
+                <p class="check-rule">Look for a labelled order, contract, appointment, account, invoice, or other event identifier.</p>
+                <dl><dt>Why selected</dt><dd>It distinguishes a specific service notification from generic outreach and directly addresses provided rejection evidence.</dd><dt>Detection limit</dt><dd>Keyword and parameter evidence can show likely context, but semantic relevance still requires moderation judgment.</dd></dl>
+              </article>
+
+              <article class="selected-check">
+                <div class="check-top"><span class="priority-badge priority-p0">P0</span><span class="check-mode deterministic">Deterministic</span></div>
+                <h3>Phone numbers and links placed in CTA</h3>
+                <p class="check-rule">Detect phone numbers or navigable URLs in message body content instead of an action button.</p>
+                <dl><dt>Why selected</dt><dd>The provided samples contain this explicit reject reason. Regex detection is reliable and the remediation is unambiguous.</dd><dt>Validator output</dt><dd>Highlights the exposed value and recommends moving it to a phone or URL CTA.</dd></dl>
+              </article>
+
+              <article class="selected-check">
+                <div class="check-top"><span class="priority-badge priority-p1">P1</span><span class="check-mode deterministic">Deterministic</span></div>
+                <h3>CTA action and destination integrity</h3>
+                <p class="check-rule">Buttons need a supported action and valid destination data, such as a URL or <code>phoneCode</code>.</p>
+                <dl><dt>Why selected</dt><dd>A visible but broken CTA harms both submission quality and the end-user journey. Required fields are structurally testable.</dd><dt>Validator output</dt><dd>Identifies missing or incompatible action data and names the field that must be supplied.</dd></dl>
+              </article>
+
+              <article class="selected-check">
+                <div class="check-top"><span class="priority-badge priority-p1">P1</span><span class="check-mode deterministic">Deterministic</span></div>
+                <h3>Unsafe or unsupported destinations</h3>
+                <p class="check-rule">Flag malformed URLs and destinations associated with personal chats, groups, or unsupported redirects.</p>
+                <dl><dt>Why selected</dt><dd>Destination strings are available in JSON and unsupported routing appears in the rejected samples.</dd><dt>Detection limit</dt><dd>The tool validates patterns and known destinations; it cannot guarantee the safety or ownership of every external page.</dd></dl>
+              </article>
+
+              <article class="selected-check">
+                <div class="check-top"><span class="priority-badge priority-p1">P1</span><span class="check-mode deterministic">Deterministic</span></div>
+                <h3>Template-type component requirements</h3>
+                <p class="check-rule">Payment, Voucher, Rating, and other types must include their corresponding utility components.</p>
+                <dl><dt>Why selected</dt><dd>A type-to-component matrix is consistent, machine-readable, and catches failures before the payload reaches moderation.</dd><dt>Validator output</dt><dd>Names the missing component, such as <code>open_utility</code> or <code>rating</code>, based on the selected type.</dd></dl>
+              </article>
+
+              <article class="selected-check">
+                <div class="check-top"><span class="priority-badge priority-p1">P1</span><span class="check-mode hybrid">Hybrid</span></div>
+                <h3>Parameter labels and prefixes</h3>
+                <p class="check-rule">Dynamic values should be paired with labels that explain what each value represents.</p>
+                <dl><dt>Why selected</dt><dd>Unlabelled variables are documented in the reject samples and reduce message clarity for both moderators and users.</dd><dt>Detection limit</dt><dd>Map keys provide strong evidence, while free-text labels require a heuristic and should be presented as a warning.</dd></dl>
+              </article>
+
+              <article class="selected-check">
+                <div class="check-top"><span class="priority-badge priority-p1">P1</span><span class="check-mode hybrid">Hybrid</span></div>
+                <h3>Basic content-quality risks</h3>
+                <p class="check-rule">Flag empty copy, known sample typos, excessive formatting, or unclear action labels.</p>
+                <dl><dt>Why selected</dt><dd>These checks prevent avoidable review cycles and demonstrate actionable pre-submission guidance.</dd><dt>Detection limit</dt><dd>Only high-confidence patterns should trigger issues; broader language quality remains a recommendation, not an approval decision.</dd></dl>
+              </article>
+            </div>
+          </section>
+
+          <section class="boundary-section">
+            <div class="section-heading">
+              <div><p class="eyebrow">Automation boundary</p><h2>Mapped, but not used for automatic rejection</h2></div>
+            </div>
+            <div class="boundary-grid">
+              <article><strong>Legal and licensing</strong><p>Industry licences, promotion legality, and regulatory eligibility require external evidence unavailable in template JSON.</p></article>
+              <article><strong>Business ownership</strong><p>Bank-account, brand, image, and destination ownership must be confirmed against business records.</p></article>
+              <article><strong>Visual and semantic meaning</strong><p>Misleading imagery, sensitive meaning, and full Tag suitability depend on context and human interpretation.</p></article>
+              <article><strong>Historical user relationship</strong><p>Consent, past transactions, send frequency, complaints, and recipient correctness require CRM or delivery-history data.</p></article>
+            </div>
+            <p class="boundary-note"><strong>Prototype policy:</strong> these rules may create a manual-review flag or risk signal, but never an automatic claim that Zalo will reject or approve the template.</p>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="./samples-data.js"></script>
+    <script src="./rule-map-data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
