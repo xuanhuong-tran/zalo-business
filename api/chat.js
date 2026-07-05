@@ -35,6 +35,13 @@ function extractRuleIds(answer, context) {
   return [...new Set(matches)].filter((id) => available.has(id)).slice(0, 6);
 }
 
+function safeProviderMessage(message) {
+  return String(message || "")
+    .replace(/AIza[\w-]{20,}/g, "[redacted-key]")
+    .replace(/key=[^\s&]+/gi, "key=[redacted]")
+    .slice(0, 360);
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -99,7 +106,9 @@ Official source: ${OFFICIAL_SOURCE}`;
         return json(res, 502, { error: `Gemini rejected the request (${providerStatus}). Check the configured model and API key.` });
       }
       if (apiResponse.status === 401 || apiResponse.status === 403) {
-        return json(res, 502, { error: `Gemini access was denied (${providerStatus}). Verify that the key was created in Google AI Studio and the Gemini API is enabled.` });
+        return json(res, 502, {
+          error: `Gemini access was denied (${providerStatus}). ${safeProviderMessage(message)}`
+        });
       }
       if (apiResponse.status === 404) {
         return json(res, 502, { error: `The configured Gemini model was not found (${providerStatus}).` });
