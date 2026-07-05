@@ -1,9 +1,9 @@
 # ZBS Template Preflight Validator
 
 The app also includes a rule-grounded Q&A assistant. On Vercel, configure
-`OPENAI_API_KEY` as an environment variable; the key is only read by
+`GEMINI_API_KEY` as an environment variable; the key is only read by
 `api/chat.js` and is never exposed to browser code. Optionally set
-`OPENAI_MODEL`; otherwise the endpoint uses `gpt-4.1-mini`.
+`GEMINI_MODEL`; otherwise the endpoint uses `gemini-2.5-flash-lite`.
 
 Prototype for Challenge 2 of the ZBS Product Intern assignment.
 
