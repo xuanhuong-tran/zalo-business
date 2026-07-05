@@ -532,7 +532,14 @@ const els = {
   navTabs: document.querySelectorAll(".nav-tab"),
   validatorPage: document.querySelector("#validatorPage"),
   rulesPage: document.querySelector("#rulesPage"),
-  checksPage: document.querySelector("#checksPage")
+  checksPage: document.querySelector("#checksPage"),
+  assistantPage: document.querySelector("#assistantPage"),
+  chatMessages: document.querySelector("#chatMessages"),
+  chatForm: document.querySelector("#chatForm"),
+  chatInput: document.querySelector("#chatInput"),
+  chatCounter: document.querySelector("#chatCounter"),
+  sendChatButton: document.querySelector("#sendChatButton"),
+  questionChips: document.querySelectorAll(".question-chip")
 };
 
 function stripHtml(value) {
@@ -992,9 +999,99 @@ function setView(view) {
   els.validatorPage.classList.toggle("active", view === "validator");
   els.rulesPage.classList.toggle("active", view === "rules");
   els.checksPage.classList.toggle("active", view === "checks");
+  els.assistantPage.classList.toggle("active", view === "assistant");
   els.navTabs.forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.view === view);
   });
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function findRelevantRuleContext(question) {
+  const stopWords = new Set(["the", "and", "for", "with", "this", "that", "what", "why", "how", "can", "toi", "co", "khong", "mot", "cac", "cho", "trong", "template"]);
+  const terms = normalizeSearchText(question)
+    .split(/[^a-z0-9_]+/)
+    .filter((term) => term.length > 2 && !stopWords.has(term));
+
+  return ruleCatalog
+    .map((rule) => {
+      const haystack = normalizeSearchText([rule.id, rule.category, rule.name, rule.description, rule.autoCheck, rule.fixExample].join(" "));
+      const score = terms.reduce((total, term) => total + (haystack.includes(term) ? 1 : 0), 0)
+        + (rule.priority === "P0" ? 0.25 : 0);
+      return { rule, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 7)
+    .map(({ rule }) => ({
+      id: rule.id,
+      category: rule.category,
+      rule: rule.name,
+      evidence: rule.description,
+      checkability: rule.checkability,
+      priority: rule.priority,
+      suggestedCheck: rule.autoCheck,
+      fixExample: rule.fixExample
+    }));
+}
+
+function appendChatMessage(role, content, citations = []) {
+  const article = document.createElement("article");
+  article.className = `chat-message ${role === "user" ? "user-message" : "assistant-message"}`;
+  const citationHtml = citations.length
+    ? `<div class="chat-citations">${citations.map((id) => `<span>${escapeHtml(id)}</span>`).join("")}</div>`
+    : "";
+  article.innerHTML = `
+    <div class="message-avatar">${role === "user" ? "Y" : "Z"}</div>
+    <div>
+      <strong>${role === "user" ? "You" : "ZBS Rule Assistant"}</strong>
+      <p>${escapeHtml(content).replace(/\n/g, "<br>")}</p>
+      ${citationHtml}
+    </div>`;
+  els.chatMessages.appendChild(article);
+  els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+  return article;
+}
+
+async function askRuleAssistant(question) {
+  const context = findRelevantRuleContext(question);
+  appendChatMessage("user", question);
+  const loading = appendChatMessage("assistant", "Checking the Rule Map...");
+  loading.classList.add("loading-message");
+  els.sendChatButton.disabled = true;
+  els.chatInput.disabled = true;
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, context })
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Assistant request failed.");
+    loading.remove();
+    appendChatMessage("assistant", payload.answer, payload.ruleIds || []);
+  } catch (error) {
+    loading.remove();
+    appendChatMessage("assistant", error.message || "The assistant is temporarily unavailable. Please try again.");
+  } finally {
+    els.sendChatButton.disabled = false;
+    els.chatInput.disabled = false;
+    els.chatInput.focus();
+  }
+}
+
+function submitChatQuestion() {
+  const question = els.chatInput.value.trim();
+  if (!question || els.sendChatButton.disabled) return;
+  els.chatInput.value = "";
+  els.chatCounter.textContent = "0 / 800";
+  askRuleAssistant(question);
 }
 
 function setRuleView(view) {
@@ -1159,6 +1256,26 @@ function init() {
   });
   els.ruleCategoryFilter.addEventListener("change", renderRules);
   els.rulePriorityFilter.addEventListener("change", renderRules);
+  els.chatForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitChatQuestion();
+  });
+  els.chatInput.addEventListener("input", () => {
+    els.chatCounter.textContent = `${els.chatInput.value.length} / 800`;
+  });
+  els.chatInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      submitChatQuestion();
+    }
+  });
+  els.questionChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      els.chatInput.value = chip.textContent.trim();
+      els.chatCounter.textContent = `${els.chatInput.value.length} / 800`;
+      els.chatInput.focus();
+    });
+  });
   els.sampleSelect.addEventListener("change", (event) => loadSample(event.target.value));
   els.templateId.addEventListener("input", scheduleValidation);
   els.templateType.addEventListener("input", scheduleValidation);

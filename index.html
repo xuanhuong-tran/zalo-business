@@ -23,6 +23,7 @@
         <button class="nav-tab active" type="button" data-view="validator">Validator</button>
         <button class="nav-tab" type="button" data-view="rules">ZBS Rule Map</button>
         <button class="nav-tab" type="button" data-view="checks">Selected Checks</button>
+        <button class="nav-tab" type="button" data-view="assistant">Rule Assistant</button>
       </nav>
 
       <section class="app-page active" id="validatorPage">
@@ -341,6 +342,64 @@
               <article><strong>Historical user relationship</strong><p>Consent, past transactions, send frequency, complaints, and recipient correctness require CRM or delivery-history data.</p></article>
             </div>
             <p class="boundary-note"><strong>Prototype policy:</strong> these rules may create a manual-review flag or risk signal, but never an automatic claim that Zalo will reject or approve the template.</p>
+          </section>
+        </section>
+      </section>
+
+      <section class="app-page" id="assistantPage">
+        <section class="assistant-layout">
+          <aside class="panel assistant-guide">
+            <p class="eyebrow">Guided rule support</p>
+            <h2>Ask before submitting</h2>
+            <p class="assistant-lead">Get a plain-language explanation grounded in the mapped ZBS moderation rules.</p>
+
+            <div class="assistant-capabilities">
+              <article><strong>Rule-grounded</strong><p>Answers cite the relevant Rule IDs from this prototype's Rule Map.</p></article>
+              <article><strong>Decision-aware</strong><p>Separates automatic checks, risk signals, and manual moderation.</p></article>
+              <article><strong>Actionable</strong><p>Explains what may be wrong and what the business can change.</p></article>
+            </div>
+
+            <div class="assistant-boundary">
+              <strong>Important boundary</strong>
+              <p>This assistant explains public rules; it cannot guarantee approval or replace ZBS moderation.</p>
+            </div>
+
+            <div class="suggested-questions">
+              <span class="mini-label">Try asking</span>
+              <button type="button" class="question-chip">Can I put a hotline number in the message body?</button>
+              <button type="button" class="question-chip">What identifiers should a transaction template include?</button>
+              <button type="button" class="question-chip">Can a Holiday/Tet template contain only a greeting?</button>
+              <button type="button" class="question-chip">Which Tag 3 product categories need manual review?</button>
+            </div>
+          </aside>
+
+          <section class="panel chat-panel">
+            <div class="panel-head chat-head">
+              <div>
+                <p class="eyebrow">ZBS Rule Assistant</p>
+                <h2>Rule Q&amp;A</h2>
+              </div>
+              <span class="assistant-status"><i></i> Rule Map connected</span>
+            </div>
+
+            <div class="chat-messages" id="chatMessages" aria-live="polite">
+              <article class="chat-message assistant-message">
+                <div class="message-avatar">Z</div>
+                <div>
+                  <strong>ZBS Rule Assistant</strong>
+                  <p>Hi. Ask me about template tags, identifiers, parameters, CTA placement, restricted categories, or Holiday/Tet requirements.</p>
+                </div>
+              </article>
+            </div>
+
+            <form class="chat-composer" id="chatForm">
+              <label class="sr-only" for="chatInput">Ask about ZBS rules</label>
+              <textarea id="chatInput" maxlength="800" rows="3" placeholder="Example: Why should a phone number be placed in a CTA?"></textarea>
+              <div class="composer-footer">
+                <span id="chatCounter">0 / 800</span>
+                <button class="send-chat-btn" id="sendChatButton" type="submit">Ask assistant</button>
+              </div>
+            </form>
           </section>
         </section>
       </section>
