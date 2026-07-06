@@ -1058,6 +1058,42 @@ function appendChatMessage(role, content, citations = []) {
   return article;
 }
 
+function buildLocalRuleAnswer(question, context) {
+  const isVietnamese = /\b(toi|mau|tin|nhan|khach|hang|so|dien|thoai|duoc|khong|tai sao|lam sao)\b/i
+    .test(normalizeSearchText(question));
+
+  if (context.length === 0) {
+    return {
+      answer: isVietnamese
+        ? "Tôi chưa tìm thấy rule đủ liên quan trong Rule Map. Hãy hỏi cụ thể hơn về Tag, định danh khách hàng/giao dịch, parameter, CTA, Payment, danh mục hạn chế hoặc Lễ/Tết. Trường hợp cần đánh giá ngữ cảnh vẫn phải được bộ phận kiểm duyệt xác nhận."
+        : "I could not find a sufficiently relevant rule in the Rule Map. Try asking specifically about tags, customer or transaction identifiers, parameters, CTA, Payment, restricted categories, or Holiday/Tet requirements. Contextual cases still require moderation review.",
+      ruleIds: []
+    };
+  }
+
+  const matches = context.slice(0, 3);
+  const ruleLines = matches.map((rule) => {
+    const mode = rule.checkability || "Manual review";
+    return `[${rule.id}] ${rule.rule} (${mode})`;
+  });
+  const fixes = matches
+    .map((rule) => rule.fixExample)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  if (isVietnamese) {
+    return {
+      answer: `Dựa trên Rule Map, các rule liên quan nhất là:\n${ruleLines.join("\n")}\n\n${fixes.length ? `Gợi ý xử lý: ${fixes.join("; ")}.\n\n` : ""}Đây là hướng dẫn pre-check từ rule công khai, không phải cam kết template chắc chắn được duyệt.`,
+      ruleIds: matches.map((rule) => rule.id)
+    };
+  }
+
+  return {
+    answer: `Based on the Rule Map, the most relevant requirements are:\n${ruleLines.join("\n")}\n\n${fixes.length ? `Suggested action: ${fixes.join("; ")}.\n\n` : ""}This is pre-submission guidance from the mapped public rules, not a guarantee of approval.`,
+    ruleIds: matches.map((rule) => rule.id)
+  };
+}
+
 async function askRuleAssistant(question) {
   const context = findRelevantRuleContext(question);
   appendChatMessage("user", question);
@@ -1078,7 +1114,8 @@ async function askRuleAssistant(question) {
     appendChatMessage("assistant", payload.answer, payload.ruleIds || []);
   } catch (error) {
     loading.remove();
-    appendChatMessage("assistant", error.message || "The assistant is temporarily unavailable. Please try again.");
+    const fallback = buildLocalRuleAnswer(question, context);
+    appendChatMessage("assistant", fallback.answer, fallback.ruleIds);
   } finally {
     els.sendChatButton.disabled = false;
     els.chatInput.disabled = false;
