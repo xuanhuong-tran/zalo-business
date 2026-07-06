@@ -150,6 +150,21 @@
             The validator prioritizes rules that are high-impact and machine-checkable before submission.
           </p>
 
+          <section class="rule-legend" aria-label="Rule map legend">
+            <div class="legend-group">
+              <strong>Check type</strong>
+              <p><span class="legend-badge auto">Auto</span> Logic or regex on JSON; high confidence → <b>Error</b></p>
+              <p><span class="legend-badge partial">Auto partial / Semi-auto</span> Heuristic, LLM, HTTP, or OA data → usually <b>Warning</b></p>
+              <p><span class="legend-badge manual">Manual</span> External documents or verification → <b>Out of tool scope</b></p>
+            </div>
+            <div class="legend-group priority-legend">
+              <strong>Priority</strong>
+              <p><span class="priority-badge priority-p0">P0</span> Must validate in the tool</p>
+              <p><span class="priority-badge priority-p1">P1</span> Important if time allows</p>
+              <p><span class="priority-badge priority-p2">P2</span> Mapped to demonstrate full-scope understanding</p>
+            </div>
+          </section>
+
           <div class="rule-subnav" aria-label="Rule map sections">
             <button class="rule-subtab active" type="button" data-rule-view="rules">All moderation rules</button>
             <button class="rule-subtab" type="button" data-rule-view="prohibited">Tag 3 restricted categories</button>
