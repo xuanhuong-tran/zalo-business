@@ -152,16 +152,32 @@
 
           <section class="rule-legend" aria-label="Rule map legend">
             <div class="legend-group">
-              <strong>Check type</strong>
-              <p><span class="legend-badge auto">Auto</span> Logic or regex on JSON; high confidence → <b>Error</b></p>
-              <p><span class="legend-badge partial">Auto partial / Semi-auto</span> Heuristic, LLM, HTTP, or OA data → usually <b>Warning</b></p>
-              <p><span class="legend-badge manual">Manual</span> External documents or verification → <b>Out of tool scope</b></p>
+              <strong class="legend-title">Check type</strong>
+              <div class="legend-items check-type-items">
+                <article>
+                  <span class="legend-badge auto">Auto</span>
+                  <p>Logic or regex directly on JSON.</p>
+                  <b class="legend-output error-output">Output: Error</b>
+                </article>
+                <article>
+                  <span class="legend-badge partial">Auto partial / Semi-auto</span>
+                  <p>Needs heuristic, LLM, HTTP, or OA data.</p>
+                  <b class="legend-output warning-output">Output: Warning</b>
+                </article>
+                <article>
+                  <span class="legend-badge manual">Manual</span>
+                  <p>Needs external documents or verification.</p>
+                  <b class="legend-output scope-output">Out of tool scope</b>
+                </article>
+              </div>
             </div>
-            <div class="legend-group priority-legend">
-              <strong>Priority</strong>
-              <p><span class="priority-badge priority-p0">P0</span> Must validate in the tool</p>
-              <p><span class="priority-badge priority-p1">P1</span> Important if time allows</p>
-              <p><span class="priority-badge priority-p2">P2</span> Mapped to demonstrate full-scope understanding</p>
+            <div class="legend-group">
+              <strong class="legend-title">Priority</strong>
+              <div class="legend-items priority-items">
+                <article><span class="priority-badge priority-p0">P0</span><p><b>Must validate</b> in the prototype</p></article>
+                <article><span class="priority-badge priority-p1">P1</span><p><b>Important</b> if time allows</p></article>
+                <article><span class="priority-badge priority-p2">P2</span><p><b>Mapped only</b> to cover full scope</p></article>
+              </div>
             </div>
           </section>
 
