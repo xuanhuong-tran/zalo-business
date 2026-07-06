@@ -221,16 +221,14 @@
           <div class="checks-intro">
             <div>
               <p class="eyebrow">Step 2 - Build the checks</p>
-              <h2>Which rules were automated, and why?</h2>
+              <h2>How the automated checks were selected</h2>
               <p>
-                The prototype does not attempt to automate every moderation rule. It prioritizes checks that combine
-                high moderation impact, evidence in the provided samples, reliable detection from JSON, and an
-                actionable fix. Contextual or legal decisions remain human-reviewed.
+                I prioritized high-risk, recurring rules that can be detected reliably from JSON and corrected before submission.
               </p>
             </div>
             <div class="selection-callout">
-              <strong>Selection principle</strong>
-              <p>Automate where confidence is high. Flag where context is missing. Never present a heuristic as an official approval decision.</p>
+              <strong>Automation boundary</strong>
+              <p>Check objective evidence automatically; flag contextual or legal decisions for human review.</p>
             </div>
           </div>
 
@@ -238,14 +236,14 @@
             <div class="section-heading">
               <div>
                 <p class="eyebrow">Prioritization framework</p>
-                <h2>Four criteria used for every rule</h2>
+                <h2>Four selection criteria</h2>
               </div>
             </div>
             <div class="criteria-grid">
-              <article><span>01</span><strong>Moderation impact</strong><p>Would the violation block processing or create a meaningful rejection risk?</p></article>
-              <article><span>02</span><strong>Observed frequency</strong><p>Does the issue recur in the provided rejected samples or official guidance?</p></article>
-              <article><span>03</span><strong>Detection confidence</strong><p>Can the rule be evaluated consistently from JSON without guessing business context?</p></article>
-              <article><span>04</span><strong>Actionability</strong><p>Can the tool identify the affected field and recommend a concrete correction?</p></article>
+              <article><span>01</span><strong>Impact</strong><p>Likely to cause rejection or block processing.</p></article>
+              <article><span>02</span><strong>Evidence</strong><p>Found in rejected samples or official guidance.</p></article>
+              <article><span>03</span><strong>Confidence</strong><p>Detectable reliably from the submitted JSON.</p></article>
+              <article><span>04</span><strong>Fixability</strong><p>Supports a specific field-level correction.</p></article>
             </div>
           </section>
 
