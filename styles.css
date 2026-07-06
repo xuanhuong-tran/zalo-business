@@ -131,6 +131,7 @@ h2 {
 
 .app-nav {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 6px;
   border: 1px solid var(--line);
@@ -1239,6 +1240,97 @@ input:disabled {
   line-height: 1.45;
 }
 
+.ai-note-page {
+  display: grid;
+  gap: 26px;
+}
+
+.ai-final-note {
+  border: 1px solid #b8d6ff;
+  border-left: 5px solid var(--zalo);
+  border-radius: 8px;
+  background: var(--blue-50);
+  padding: 16px;
+}
+
+.ai-final-note strong {
+  color: var(--zalo-dark);
+}
+
+.ai-final-note p {
+  margin: 6px 0 0;
+  color: #41516a;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ai-note-section {
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+}
+
+.ai-note-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.ai-tool-grid,
+.ai-principles-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.ai-layer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.ai-tool-grid article,
+.ai-layer-grid article,
+.ai-principles-grid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 14px;
+}
+
+.ai-tool-grid span,
+.ai-layer-grid span {
+  display: inline-flex;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  background: var(--blue-50);
+  padding: 4px 8px;
+  color: var(--zalo-dark);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ai-tool-grid strong,
+.ai-layer-grid strong,
+.ai-principles-grid strong {
+  display: block;
+  color: #26364d;
+  font-size: 14px;
+}
+
+.ai-tool-grid p,
+.ai-layer-grid p,
+.ai-principles-grid p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+.ai-principles-grid article {
+  border-left: 4px solid var(--green);
+  background: #fbfffd;
+}
+
 .assistant-layout {
   display: grid;
   grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.55fr);
@@ -1501,7 +1593,10 @@ input:disabled {
   .checks-intro,
   .criteria-grid,
   .selected-checks-grid,
-  .boundary-grid {
+  .boundary-grid,
+  .ai-tool-grid,
+  .ai-layer-grid,
+  .ai-principles-grid {
     grid-template-columns: 1fr;
   }
 

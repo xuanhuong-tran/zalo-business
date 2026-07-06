@@ -532,6 +532,7 @@ const els = {
   validatorPage: document.querySelector("#validatorPage"),
   rulesPage: document.querySelector("#rulesPage"),
   checksPage: document.querySelector("#checksPage"),
+  aiNotePage: document.querySelector("#aiNotePage"),
   assistantPage: document.querySelector("#assistantPage"),
   chatMessages: document.querySelector("#chatMessages"),
   chatForm: document.querySelector("#chatForm"),
@@ -1212,6 +1213,7 @@ function setView(view) {
   els.validatorPage.classList.toggle("active", view === "validator");
   els.rulesPage.classList.toggle("active", view === "rules");
   els.checksPage.classList.toggle("active", view === "checks");
+  els.aiNotePage.classList.toggle("active", view === "aiNote");
   els.assistantPage.classList.toggle("active", view === "assistant");
   els.navTabs.forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.view === view);
