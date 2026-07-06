@@ -24,6 +24,7 @@
         <button class="nav-tab" type="button" data-view="rules">ZBS Rule Map</button>
         <button class="nav-tab" type="button" data-view="checks">Selected Checks</button>
         <button class="nav-tab" type="button" data-view="assistant">Rule Assistant</button>
+        <button class="nav-tab" type="button" data-view="aiNote">AI NOTE</button>
       </nav>
 
       <section class="app-page active" id="validatorPage">
@@ -377,6 +378,91 @@
               <article><strong>Historical user relationship</strong><p>Consent, past transactions, send frequency, complaints, and recipient correctness require CRM or delivery-history data.</p></article>
             </div>
             <p class="boundary-note"><strong>Prototype policy:</strong> these rules may create a manual-review flag or risk signal, but never an automatic claim that Zalo will reject or approve the template.</p>
+          </section>
+        </section>
+      </section>
+
+      <section class="app-page" id="aiNotePage">
+        <section class="panel ai-note-page">
+          <section class="ai-note-section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Tool roles</p>
+                <h2>Why I used more than one AI tool</h2>
+              </div>
+            </div>
+            <div class="ai-tool-grid">
+              <article>
+                <span>Claude</span>
+                <strong>Thinking and content partner</strong>
+                <p>Used for framing the product problem, comparing solution directions, and pressure-testing the explanation of moderation rules.</p>
+              </article>
+              <article>
+                <span>Codex</span>
+                <strong>Code implementation partner</strong>
+                <p>Used to read the codebase, implement UI and validation changes, debug behavior, and adjust the prototype based on review feedback.</p>
+              </article>
+              <article>
+                <span>Perplexity</span>
+                <strong>Source discovery partner</strong>
+                <p>Used to find relevant public sources quickly, then checked manually against the official Zalo rule source before using them.</p>
+              </article>
+              <article>
+                <span>Manual review</span>
+                <strong>Final quality gate</strong>
+                <p>Used to verify wording, product logic, rule interpretation, and whether each automated check should be an error, warning, or manual flag.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="ai-note-section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Prompting method</p>
+                <h2>Two-layer prompting to reduce wrong outputs</h2>
+              </div>
+            </div>
+            <div class="ai-layer-grid">
+              <article>
+                <span>Layer 1</span>
+                <strong>Context interviewer</strong>
+                <p>
+                  The first AI layer is used to understand the assignment context, ask back unclear points, and turn the clarified problem into a precise execution prompt.
+                </p>
+              </article>
+              <article>
+                <span>Layer 2</span>
+                <strong>Task executor</strong>
+                <p>
+                  The second AI layer receives that refined prompt and performs the task, such as coding, restructuring content, or checking implementation details.
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section class="ai-note-section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Quality control</p>
+                <h2>How I avoided AI loops and hallucinations</h2>
+              </div>
+            </div>
+            <div class="ai-principles-grid">
+              <article><strong>Switch models when stuck</strong><p>I switched between Claude and Codex when the discussion became repetitive or too attached to one implementation path.</p></article>
+              <article><strong>Check official sources by hand</strong><p>Perplexity helped with discovery, but I manually checked the official Zalo source before turning a claim into a rule.</p></article>
+              <article><strong>Keep scope labels clear</strong><p>Objective JSON checks become errors; contextual signals become warnings; external evidence stays manual.</p></article>
+              <article><strong>Use AI edits as drafts</strong><p>Codex implementation was reviewed and adjusted according to the product goal, UI clarity, and assignment requirements.</p></article>
+            </div>
+          </section>
+
+          <section class="ai-note-section">
+            <div class="ai-final-note">
+              <strong>Final ownership</strong>
+              <p>
+                The final prototype is not an AI-generated answer pasted into a submission. AI helped me move faster, but I chose the product scope,
+                selected the automation boundaries, reviewed the rule map, and edited the interface based on the assignment goals.
+              </p>
+            </div>
           </section>
         </section>
       </section>
