@@ -65,8 +65,6 @@ Findings are separated into three decision types:
 
 Open `index.html` in a browser.
 
-No backend is required.
-
 ## Product framing
 
 This tool does not replace ZBS moderation. It improves template quality before
