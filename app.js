@@ -514,7 +514,6 @@ const els = {
   actionsList: document.querySelector("#actionsList"),
   linksList: document.querySelector("#linksList"),
   issueCount: document.querySelector("#issueCount"),
-  scoreNumber: document.querySelector("#scoreNumber"),
   scoreText: document.querySelector("#scoreText"),
   issuesList: document.querySelector("#issuesList"),
   rulesGrid: document.querySelector("#rulesGrid"),
@@ -1141,7 +1140,6 @@ function runValidation() {
   const manualCount = issues.filter((item) => item.decisionType === "manual").length;
 
   if (els.overallScore) els.overallScore.textContent = score;
-  els.scoreNumber.textContent = score;
   if (els.overallStatus) els.overallStatus.textContent = status;
   els.scoreText.textContent = `${status}. ${errorCount} error${errorCount === 1 ? "" : "s"}, ${warningCount} warning${warningCount === 1 ? "" : "s"}, ${manualCount} manual check${manualCount === 1 ? "" : "s"}.`;
 
@@ -1159,8 +1157,7 @@ function resetValidationState() {
   els.actionsList.textContent = "--";
   els.linksList.textContent = "--";
   els.issueCount.textContent = "0 issues";
-  els.scoreNumber.textContent = "--";
-  els.scoreText.textContent = "Paste JSON or choose a sample to calculate readiness.";
+  els.scoreText.textContent = "Paste JSON or choose a sample to review findings.";
   els.issuesList.innerHTML = `<p class="empty-state">Issues will appear here after validation.</p>`;
 }
 
