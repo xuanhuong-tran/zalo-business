@@ -478,6 +478,19 @@ input:disabled {
   border-left-color: var(--zalo);
 }
 
+.issue-card.error {
+  border-left-color: var(--red);
+}
+
+.issue-card.warning {
+  border-left-color: var(--amber);
+}
+
+.issue-card.manual {
+  border-left-color: #64748b;
+  background: #fbfcfe;
+}
+
 .issue-top {
   display: flex;
   justify-content: space-between;
@@ -513,6 +526,30 @@ input:disabled {
 .severity.low {
   background: var(--blue-50);
   color: var(--zalo-dark);
+}
+
+.decision-badge {
+  flex: none;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.decision-badge.error {
+  background: var(--red-50);
+  color: var(--red);
+}
+
+.decision-badge.warning {
+  background: var(--amber-50);
+  color: #9a5d00;
+}
+
+.decision-badge.manual {
+  background: #eef2f7;
+  color: #516078;
 }
 
 .issue-card p {

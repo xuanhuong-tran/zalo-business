@@ -44,14 +44,22 @@ The in-app rule map summarizes the official moderation scope into these groups:
 
 ## Automated check scope
 
+- `INPUT_001` Payload, root, sections, and visible-content structure
 - `ID_001` Identifier coverage
-- `VAR_001` Parameter prefix
+- `VAR_001` Parameter syntax and prefix clarity
 - `CTA_001` CTA placement
+- `CTA_002` CTA action and destination integrity
 - `TXT_001` Text quality
 - `PAY_001` Payment consistency
 - `URL_001` Unsupported destination
 - `TYPE_001` Template type fit
 - `SEM_001` Semantic clarity
+
+Findings are separated into three decision types:
+
+- `Error`: objective structural or formatting failure detected from JSON.
+- `Warning`: contextual risk signal that requires human confirmation.
+- `Manual`: external evidence or verification outside the tool's scope.
 
 ## How to run
 

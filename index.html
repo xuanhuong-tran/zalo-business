@@ -300,15 +300,15 @@
             <div class="selected-checks-grid">
               <article class="selected-check">
                 <div class="check-top"><span class="priority-badge priority-p0">P0</span><span class="check-mode deterministic">Deterministic</span></div>
-                <h3>Valid JSON and core structure</h3>
-                <p class="check-rule">Parseable input with <code>root</code> and a non-empty <code>sections[]</code>.</p>
-                <dl><dt>Why selected</dt><dd>Nothing else can be validated or rendered when the payload is malformed. Detection is exact and the fix is immediate.</dd><dt>Validator output</dt><dd>Points to the structural failure and asks the business to restore the required root or sections array.</dd></dl>
+                <h3>Payload and core structure</h3>
+                <p class="check-rule">Readable JSON/ZBS pseudo-JSON with <code>root</code>, <code>sections[]</code>, and user-visible content.</p>
+                <dl><dt>Why selected</dt><dd>Nothing else can be validated or rendered when the payload is malformed. Detection is exact and the fix is immediate.</dd><dt>Validator output</dt><dd>Returns an Error for unreadable input, missing root/sections, or missing visible content.</dd></dl>
               </article>
 
               <article class="selected-check">
                 <div class="check-top"><span class="priority-badge priority-p0">P0</span><span class="check-mode deterministic">Deterministic</span></div>
                 <h3>Parameter syntax and rendering</h3>
-                <p class="check-rule">Variables must use a complete <code>&lt;parameter_name&gt;</code> pattern and must not expose editor HTML.</p>
+                <p class="check-rule">Variables must use a complete <code>&lt;parameter_name&gt;</code> pattern with supported characters.</p>
                 <dl><dt>Why selected</dt><dd>Parameter defects appear in rejected samples, are detectable directly from text fields, and can be fixed at the exact location.</dd><dt>Validator output</dt><dd>Reports malformed or exposed parameters and provides a corrected parameter example.</dd></dl>
               </article>
 
@@ -364,7 +364,7 @@
               <article class="selected-check">
                 <div class="check-top"><span class="priority-badge priority-p1">P1</span><span class="check-mode hybrid">Hybrid</span></div>
                 <h3>Basic content-quality risks</h3>
-                <p class="check-rule">Flag empty copy, known sample typos, excessive formatting, or unclear action labels.</p>
+                <p class="check-rule">Flag known rejection typos, excessive all-caps copy, and repeated punctuation or characters.</p>
                 <dl><dt>Why selected</dt><dd>These checks prevent avoidable review cycles and demonstrate actionable pre-submission guidance.</dd><dt>Detection limit</dt><dd>Only high-confidence patterns should trigger issues; broader language quality remains a recommendation, not an approval decision.</dd></dl>
               </article>
             </div>

@@ -617,10 +617,18 @@ function walkJson(value, bucket) {
 
 function extractTemplate(raw) {
   const bucket = { texts: [], actions: [], data: [], componentTypes: [] };
+  let parseMode = "strict-json";
+  let parsedRoot = null;
+  let strictSections = null;
   try {
     const parsed = JSON.parse(raw);
+    parsedRoot = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed.root : null;
+    strictSections = Array.isArray(parsedRoot?.sections) ? parsedRoot.sections : null;
     walkJson(parsed, bucket);
   } catch {
+    parseMode = /"root"\s*:/.test(raw) && /"sections"\s*:/.test(raw) && /:\s*(?:string|bool|int|NULL)/.test(raw)
+      ? "pseudo-json"
+      : "unreadable";
     const pseudo = extractFromPseudoJson(raw);
     Object.assign(bucket, pseudo);
   }
@@ -632,6 +640,40 @@ function extractTemplate(raw) {
   const phonesInText = uniq([...allVisible.matchAll(/(?:\+?84|0)(?:[\s.-]?\d){8,10}/g)].map((m) => m[0]));
   const urlsInText = uniq([...allVisible.matchAll(/https?:\/\/[^\s"<>]+/g)].map((m) => m[0]));
   const urlsInData = uniq([...allData.matchAll(/https?:\/\/[^\s"<>]+/g)].map((m) => m[0]));
+  const cleanedParameterSource = raw.replace(/<\/?span\b[^>]*>/gi, "");
+  const invalidParameterTokens = uniq([
+    ...[...cleanedParameterSource.matchAll(/<([^<>\r\n]+)>/g)]
+      .map((match) => match[0])
+      .filter((token) => !/^<[A-Za-z_$][A-Za-z0-9_$]*>$/.test(token)),
+    ...[...cleanedParameterSource.matchAll(/<[A-Za-z_$][A-Za-z0-9_$]*(?=[\s"',}:\]]|$)/g)].map((match) => match[0]),
+    ...[...cleanedParameterSource.matchAll(/(?<![<$])\b[A-Za-z_$][A-Za-z0-9_$]*>/g)].map((match) => match[0])
+  ]).slice(0, 8);
+  const dataValues = uniq(bucket.data);
+  const malformedUrlData = dataValues.filter((value) => {
+    if (!/(?:https?:\/\/|www\.)/i.test(value)) return false;
+    try {
+      const candidate = value.startsWith("www.") ? `https://${value}` : value;
+      const parsed = new URL(candidate);
+      return !["http:", "https:"].includes(parsed.protocol) || !parsed.hostname.includes(".");
+    } catch {
+      return true;
+    }
+  });
+  const phoneCodes = uniq([...dataValues.flatMap((value) => {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed?.phoneCode != null) return [String(parsed.phoneCode)];
+    } catch {
+      // Pseudo-JSON button data is handled by the pattern below.
+    }
+    const match = value.match(/phoneCode["']?\s*:\s*["']?([^"'}\s,]+)/i);
+    return match ? [match[1]] : [];
+  }), ...[...raw.matchAll(/phoneCode[^\d]{0,12}(\+?\d{8,15})/gi)].map((match) => match[1])]);
+  const hasRoot = parseMode === "strict-json" ? Boolean(parsedRoot) : /"root"\s*:/.test(raw);
+  const hasSections = parseMode === "strict-json" ? Boolean(strictSections) : /"sections"\s*:\s*\[/.test(raw);
+  const hasVisibleSections = parseMode === "strict-json"
+    ? Boolean(strictSections?.length)
+    : hasSections && (bucket.texts.length > 0 || bucket.actions.length > 0 || bucket.componentTypes.length > 0);
 
   return {
     texts: uniq(bucket.texts),
@@ -642,12 +684,20 @@ function extractTemplate(raw) {
     phonesInText,
     urlsInText,
     urlsInData,
+    malformedUrlData,
+    invalidParameterTokens,
+    parseMode,
+    hasRoot,
+    hasSections,
+    hasVisibleSections,
+    hasButtonsComponent: /"buttons"\s*:/.test(raw),
+    phoneCodes,
     raw
   };
 }
 
-function issue(ruleId, title, severity, why, fix, evidence = "") {
-  return { ruleId, title, severity, why, fix, evidence };
+function issue(ruleId, title, severity, why, fix, evidence = "", decisionType = "error") {
+  return { ruleId, title, severity, why, fix, evidence, decisionType };
 }
 
 function hasAny(text, words) {
@@ -670,13 +720,67 @@ function validateTemplate(model, templateType) {
   const isSurveyLike = hasAny(visible, ["khảo sát", "chia sẻ cảm nhận", "cải thiện dịch vụ"]);
   const isPromotionLike = hasAny(type + " " + visible, ["voucher", "ưu đãi", "sinh nhật", "giảm"]);
 
+  if (model.parseMode === "unreadable") {
+    issues.push(issue(
+      "INPUT_001",
+      "Unreadable template payload",
+      "high",
+      "The input is neither valid JSON nor the supported ZBS pseudo-JSON format, so the template cannot be checked reliably.",
+      "Paste the full registration payload and verify quotation marks, braces, arrays, and typed pseudo-JSON values."
+    ));
+    return issues;
+  }
+
+  if (!model.hasRoot) {
+    issues.push(issue(
+      "INPUT_001",
+      "Missing root object",
+      "high",
+      "The registration payload needs a root object before its template fields can be interpreted.",
+      "Wrap the template registration content in a root object."
+    ));
+  } else if (!model.hasSections) {
+    issues.push(issue(
+      "INPUT_001",
+      "Missing sections array",
+      "high",
+      "The user-visible template components must be provided in root.sections[].",
+      "Add a sections array under root and place the template components inside it."
+    ));
+  } else if (!model.hasVisibleSections) {
+    issues.push(issue(
+      "INPUT_001",
+      "Empty sections array",
+      "high",
+      "The sections array does not contain any readable message component.",
+      "Add at least one supported component such as banner, map_info, buttons, rating, or open_utility."
+    ));
+  }
+
+  if (model.invalidParameterTokens.length > 0) {
+    issues.push(issue(
+      "VAR_001",
+      "Malformed parameter syntax",
+      "high",
+      "Parameters need complete angle brackets and a name made from letters, numbers, underscores, or approved system symbols.",
+      "Use a complete parameter such as <customer_name> and replace spaces, accents, or hyphens with underscores.",
+      model.invalidParameterTokens.join(", ")
+    ));
+  }
+
+  if (model.parseMode === "unreadable" || !model.hasRoot || !model.hasSections || !model.hasVisibleSections) {
+    return issues;
+  }
+
   if (customerVars.length === 0) {
     issues.push(issue(
       "ID_001",
       "Missing customer identifier",
       "high",
       "ZBS moderation often expects the message to identify the customer or recipient context.",
-      "Add a clearly labeled customer identifier, such as Quý khách <customer_name> or Mã khách hàng <customer_id>."
+      "Add a clearly labeled customer identifier, such as Quý khách <customer_name> or Mã khách hàng <customer_id>.",
+      "",
+      "warning"
     ));
   }
 
@@ -686,7 +790,9 @@ function validateTemplate(model, templateType) {
       "Missing transaction / business context identifier",
       "high",
       "The message may not show the transaction, order, appointment, contract, or account context clearly enough.",
-      "Add a labeled transaction identifier such as Mã đơn hàng <order_code>, Mã hợp đồng <contract_id>, or Ngày giao dịch <date>."
+      "Add a labeled transaction identifier such as Mã đơn hàng <order_code>, Mã hợp đồng <contract_id>, or Ngày giao dịch <date>.",
+      "",
+      "warning"
     ));
   }
 
@@ -696,7 +802,9 @@ function validateTemplate(model, templateType) {
       "Survey message lacks transaction context",
       "medium",
       "A survey/customer-care template still needs enough context to show why the business is contacting the user.",
-      "Reference a recent service, purchase, visit, ticket, or transaction before asking for feedback."
+      "Reference a recent service, purchase, visit, ticket, or transaction before asking for feedback.",
+      "",
+      "warning"
     ));
   }
 
@@ -722,6 +830,62 @@ function validateTemplate(model, templateType) {
     ));
   });
 
+  if (model.hasButtonsComponent && model.actions.length === 0) {
+    issues.push(issue(
+      "CTA_002",
+      "Button is missing an action",
+      "high",
+      "A buttons component is present, but no executable action can be found.",
+      "Add a supported click.action to every visible button."
+    ));
+  }
+
+  if (model.actions.some((action) => /action\.open\.phone/i.test(action))) {
+    const invalidPhoneCodes = model.phoneCodes.filter((code) => !/^\+?\d{8,15}$/.test(code));
+    if (model.phoneCodes.length === 0 || invalidPhoneCodes.length > 0) {
+      issues.push(issue(
+        "CTA_002",
+        "Phone CTA has invalid destination data",
+        "high",
+        "A phone action requires a valid phoneCode containing 8–15 digits.",
+        "Provide click.data with a valid phoneCode, for example {\"phoneCode\":\"1800558807\"}.",
+        invalidPhoneCodes.join(", ") || "phoneCode missing"
+      ));
+    }
+  }
+
+  if (model.actions.some((action) => /action\.open\.(?:inapp|url|web)/i.test(action)) && model.urlsInData.length === 0) {
+    issues.push(issue(
+      "CTA_002",
+      "Link CTA is missing a valid URL",
+      "high",
+      "A navigation action needs a valid HTTP or HTTPS destination in its data field.",
+      "Add the complete destination URL to click.data."
+    ));
+  }
+
+  model.malformedUrlData.forEach((url) => {
+    issues.push(issue(
+      "CTA_002",
+      "Malformed CTA URL",
+      "high",
+      "The CTA destination is not a valid HTTP or HTTPS URL.",
+      "Use a complete URL such as https://business.example/path.",
+      url
+    ));
+  });
+
+  model.urlsInData.filter((url) => /(?:bit\.ly|tinyurl\.com|goo\.gl|t\.co)\//i.test(url)).forEach((url) => {
+    issues.push(issue(
+      "CTA_002",
+      "Shortened CTA URL",
+      "medium",
+      "Short links hide the final destination and may not satisfy CTA transparency requirements.",
+      "Replace the short link with the full official business URL.",
+      url
+    ));
+  });
+
   if (/KÍCH HỌA|KICH HOA/i.test(visible)) {
     issues.push(issue(
       "TXT_001",
@@ -729,7 +893,8 @@ function validateTemplate(model, templateType) {
       "medium",
       "The sample rejection explicitly flags this as a typo.",
       'Replace "KÍCH HỌA" with "KÍCH HOẠT".',
-      "KÍCH HỌA"
+      "KÍCH HỌA",
+      "warning"
     ));
   }
 
@@ -742,9 +907,18 @@ function validateTemplate(model, templateType) {
       const index = text.indexOf(variable);
       if (index < 0) return false;
       const before = text.slice(Math.max(0, index - 28), index).trim();
-      return /(?:mã|tên|ngày|giờ|số|hạn|điều kiện|hạng|khách|đơn|hợp đồng|biển số|trạng thái|doanh thu|ưu đãi|hsd|giảm)$/i.test(before);
+      return /(?:mã|tên|ngày|giờ|số|hạn|điều kiện|hạng|khách|hàng|đơn|hợp đồng|biển số|trạng thái|doanh thu|ưu đãi|hsd|giảm|căn hộ|đợt)$/i.test(before)
+        || (before.match(/[\p{L}\p{N}]+/gu) || []).length >= 2;
     });
-    return hasTextOccurrence && !hasGoodPrefix;
+    const occurrenceIndex = model.texts.findIndex((text) => text.includes(variable));
+    const previousText = occurrenceIndex > 0 ? model.texts[occurrenceIndex - 1].trim() : "";
+    const nextText = occurrenceIndex >= 0 && occurrenceIndex < model.texts.length - 1
+      ? model.texts[occurrenceIndex + 1].trim()
+      : "";
+    const hasAdjacentLabel = [previousText, nextText].some((text) =>
+      text.length > 0 && text.length <= 80 && !/<[^>]+>/.test(text)
+    );
+    return hasTextOccurrence && !hasGoodPrefix && !hasAdjacentLabel;
   });
 
   if (suspiciousBareVariables.length > 0) {
@@ -754,7 +928,8 @@ function validateTemplate(model, templateType) {
       "medium",
       "Moderation feedback asks for prefixes that explain what each parameter means.",
       `Add labels before variables, e.g. "Mã đơn hàng ${suspiciousBareVariables[0]}" or "Điều kiện ${suspiciousBareVariables[0]}".`,
-      suspiciousBareVariables.slice(0, 4).join(", ")
+      suspiciousBareVariables.slice(0, 4).join(", "),
+      "warning"
     ));
   }
 
@@ -783,22 +958,26 @@ function validateTemplate(model, templateType) {
         "Add or verify open_utility / 3rd_info payment fields."
       ));
     }
-    if (/accountName:\s*Cá nhân|cá nhân|ủy quyền|thu hộ/i.test(raw)) {
-      issues.push(issue(
-        "PAY_001",
-        "Payment ownership risk",
-        "high",
-        "Payment information should belong to the business owning the OA, or require authorization proof.",
-        "Verify bank account ownership or provide authorization documentation before submission."
-      ));
-    }
+    issues.push(issue(
+      "PAY_001",
+      "Payment account ownership verification",
+      "high",
+      "JSON can expose payment details, but it cannot prove that the receiving account belongs to the OA-owning business or has valid authorization.",
+      "Verify account ownership or authorization documents outside this tool before submission.",
+      /accountName:\s*Cá nhân|cá nhân|ủy quyền|thu hộ/i.test(raw)
+        ? "Potential third-party or personal-account wording detected"
+        : "Payment template requires external ownership evidence",
+      "manual"
+    ));
     if (hasAny(visible, ["Đơn hàng"]) && !hasAny(visible, ["Mã đơn hàng", "đơn hàng có mã"])) {
       issues.push(issue(
         "SEM_001",
         'Wording should clarify "mã đơn hàng"',
         "medium",
         'The sample rejection asks to change "đơn hàng" into "mã đơn hàng" or "đơn hàng có mã".',
-        'Change the table key/body text from "Đơn hàng" to "Mã đơn hàng".'
+        'Change the table key/body text from "Đơn hàng" to "Mã đơn hàng".',
+        "",
+        "warning"
       ));
     }
   }
@@ -823,21 +1002,55 @@ function validateTemplate(model, templateType) {
     ));
   }
 
+  if (model.texts.length === 0 && model.hasSections) {
+    issues.push(issue(
+      "INPUT_001",
+      "No user-visible message text",
+      "high",
+      "The payload has sections but no readable user-facing text was extracted.",
+      "Add a visible title or body message to a supported text component."
+    ));
+  }
+
+  const excessiveFormatting = model.texts.filter((text) => {
+    const letters = text.match(/[A-Za-zÀ-ỹ]/g) || [];
+    const uppercase = text.match(/[A-ZÀ-Ỹ]/g) || [];
+    const uppercaseRatio = letters.length ? uppercase.length / letters.length : 0;
+    return (text.length > 80 && letters.length > 25 && uppercaseRatio > 0.88)
+      || /[!?.,]{4,}/.test(text)
+      || /(.)\1{5,}/i.test(text);
+  });
+  if (excessiveFormatting.length > 0) {
+    issues.push(issue(
+      "TXT_001",
+      "Potentially excessive text formatting",
+      "low",
+      "Long all-caps copy or repeated punctuation can reduce clarity and professionalism.",
+      "Use sentence case and remove repeated punctuation or characters.",
+      excessiveFormatting[0].slice(0, 120),
+      "warning"
+    ));
+  }
+
   return issues;
 }
 
 function scoreFromIssues(issues) {
   const penalty = issues.reduce((total, item) => {
-    if (item.severity === "high") return total + 22;
-    if (item.severity === "medium") return total + 12;
-    return total + 6;
+    if (item.decisionType === "manual") return total;
+    const base = item.severity === "high" ? 22 : item.severity === "medium" ? 12 : 6;
+    return total + (item.decisionType === "warning" ? Math.ceil(base / 2) : base);
   }, 0);
   return Math.max(0, 100 - penalty);
 }
 
-function statusFromScore(score, issueCount) {
-  if (issueCount === 0 && score >= 90) return "Ready for submission";
-  if (score >= 75) return "Minor review needed";
+function statusFromScore(score, issues) {
+  const errorCount = issues.filter((item) => item.decisionType === "error").length;
+  const warningCount = issues.filter((item) => item.decisionType === "warning").length;
+  const manualCount = issues.filter((item) => item.decisionType === "manual").length;
+  if (issues.length === 0) return "Preflight checks passed";
+  if (errorCount === 0 && warningCount === 0 && manualCount > 0) return "Manual verification required";
+  if (errorCount === 0) return "Review warnings";
   if (score >= 55) return "Needs revision";
   return "High rejection risk";
 }
@@ -867,7 +1080,7 @@ function renderPreview(model, issues) {
 }
 
 function renderIssues(issues) {
-  els.issueCount.textContent = `${issues.length} issue${issues.length === 1 ? "" : "s"}`;
+  els.issueCount.textContent = `${issues.length} finding${issues.length === 1 ? "" : "s"}`;
   if (issues.length === 0) {
     els.issuesList.innerHTML = `
       <div class="issue-card low">
@@ -883,14 +1096,14 @@ function renderIssues(issues) {
   }
 
   els.issuesList.innerHTML = issues.map((item) => `
-    <article class="issue-card ${item.severity}">
+    <article class="issue-card ${item.decisionType} ${item.severity}">
       <div class="issue-top">
         <p class="issue-title">${escapeHtml(item.title)}</p>
-        <span class="severity ${item.severity}">${item.severity}</span>
+        <span class="decision-badge ${item.decisionType}">${item.decisionType}</span>
       </div>
-      <p><strong>${item.ruleId}</strong>${item.evidence ? ` · Evidence: ${escapeHtml(item.evidence)}` : ""}</p>
+      <p><strong>${item.ruleId}</strong> · Risk: ${escapeHtml(item.severity)}${item.evidence ? ` · Evidence: ${escapeHtml(item.evidence)}` : ""}</p>
       <p>${escapeHtml(item.why)}</p>
-      <div class="fix"><strong>Suggested fix:</strong> ${escapeHtml(item.fix)}</div>
+      <div class="fix"><strong>${item.decisionType === "manual" ? "Verification needed" : "Suggested fix"}:</strong> ${escapeHtml(item.fix)}</div>
     </article>
   `).join("");
 }
@@ -922,12 +1135,15 @@ function runValidation() {
   const model = extractTemplate(raw);
   const issues = validateTemplate(model, templateType);
   const score = scoreFromIssues(issues);
-  const status = statusFromScore(score, issues.length);
+  const status = statusFromScore(score, issues);
+  const errorCount = issues.filter((item) => item.decisionType === "error").length;
+  const warningCount = issues.filter((item) => item.decisionType === "warning").length;
+  const manualCount = issues.filter((item) => item.decisionType === "manual").length;
 
   if (els.overallScore) els.overallScore.textContent = score;
   els.scoreNumber.textContent = score;
   if (els.overallStatus) els.overallStatus.textContent = status;
-  els.scoreText.textContent = `${status}. ${issues.length} moderation risk${issues.length === 1 ? "" : "s"} found.`;
+  els.scoreText.textContent = `${status}. ${errorCount} error${errorCount === 1 ? "" : "s"}, ${warningCount} warning${warningCount === 1 ? "" : "s"}, ${manualCount} manual check${manualCount === 1 ? "" : "s"}.`;
 
   renderExtract(model);
   renderPreview(model, issues);
