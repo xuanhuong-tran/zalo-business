@@ -279,12 +279,22 @@
           </section>
 
           <section class="selected-section">
-            <div class="section-heading split-heading">
+            <div class="section-heading">
               <div>
                 <p class="eyebrow">Selected for automation</p>
                 <h2>Checks implemented in the validator</h2>
               </div>
-              <div class="legend-row"><span class="check-mode deterministic">Deterministic</span><span class="check-mode hybrid">Hybrid</span></div>
+            </div>
+
+            <div class="check-type-note" aria-label="Selected check type definitions">
+              <article>
+                <span class="check-mode deterministic">Deterministic</span>
+                <div><strong>Machine decision → Error</strong><p>Clear structural or formatting condition; the same JSON always produces the same result.</p></div>
+              </article>
+              <article>
+                <span class="check-mode hybrid">Hybrid</span>
+                <div><strong>Risk signal → Warning</strong><p>Uses contextual signals for human confirmation; never decides approval or rejection automatically.</p></div>
+              </article>
             </div>
 
             <div class="selected-checks-grid">
